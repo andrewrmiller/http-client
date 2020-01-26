@@ -1,1 +1,2 @@
-export * from "./HttpClient";
+export * from './HttpClient';
+export * from './HttpResult';

@@ -4,7 +4,7 @@
   "description": "Westlake Labs HTTP client wrapper.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "./node_modules/tslint/bin/tslint --project tsconfig.json && ./node_modules/typescript/bin/tsc"
   },
   "repository": {
     "type": "git",
@@ -15,5 +15,18 @@
   "bugs": {
     "url": "https://github.com/andrewrmiller/http-client/issues"
   },
-  "homepage": "https://github.com/andrewrmiller/http-client#readme"
+  "homepage": "https://github.com/andrewrmiller/http-client#readme",
+  "devDependencies": {
+    "@types/bluebird": "^3.5.29",
+    "@types/http-errors": "^1.6.3",
+    "ts-node": "^8.6.2",
+    "tslint": "^6.0.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "http-errors": "^1.7.3",
+    "http-method-enum": "^1.0.0"
+  }
 }

@@ -1,8 +1,8 @@
 {
   "name": "@westlakelabs/http-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Westlake Labs HTTP client wrapper.",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "build": "./node_modules/tslint/bin/tslint --project tsconfig.json && ./node_modules/typescript/bin/tsc"
   },

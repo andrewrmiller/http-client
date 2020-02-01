@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Promise = require('bluebird');
 import createHttpError from 'http-errors';
 import { HTTPMethod } from 'http-method-enum';
 import { HttpHeader } from './HttpHeader';

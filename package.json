@@ -1,6 +1,6 @@
 {
   "name": "@westlakelabs/http-client",
-  "version": "1.0.4",
+  "version": "1.0.7",
   "description": "Westlake Labs HTTP client wrapper.",
   "main": "build/index.js",
   "scripts": {

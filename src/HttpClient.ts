@@ -1,8 +1,20 @@
 import Promise from 'bluebird';
 import createHttpError from 'http-errors';
 import { HTTPMethod } from 'http-method-enum';
-import { HttpHeader } from './HttpHeader';
+import { HttpContentType, HttpHeader } from './HttpHeader';
 import { HttpResult, IFileBlob } from './HttpResult';
+
+enum PayloadType {
+  None,
+  Json,
+  UrlEncoded
+}
+
+enum ResponseType {
+  None,
+  Json,
+  Text
+}
 
 /**
  * HttpClient provides some convenience methods for interacting with our API.
@@ -11,11 +23,113 @@ import { HttpResult, IFileBlob } from './HttpResult';
  * as bluebird Promises.
  */
 export class HttpClient {
-  // retrieves the file at the given URL and returns it as a IFileBlob
+  /**
+   * Retrieves the data from a specified URL as JSON.
+   *
+   * @param url URL to which the request should be sent.
+   */
+  public static get<TResponse>(url: string): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(url, HTTPMethod.GET, ResponseType.Json);
+  }
+
+  /**
+   * Sends a POST request with a JSON payload and returns the JSON response.
+   *
+   * @param url URL to which the request should be sent.
+   * @param payload Data to be included in the request body as JSON.
+   */
+  public static post<TResponse>(
+    url: string,
+    payload: object
+  ): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.POST,
+      ResponseType.Json,
+      payload,
+      PayloadType.Json
+    );
+  }
+
+  /**
+   * Sends a PATCH request with a JSON payload and returns the JSON response.
+   *
+   * @param url URL to which the request should be sent.
+   * @param payload Data to be included in the request body as JSON.
+   */
+  public static patch<TResponse>(
+    url: string,
+    payload: object
+  ): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.PATCH,
+      ResponseType.Json,
+      payload,
+      PayloadType.Json
+    );
+  }
+
+  /**
+   * Sends a PUT request with a JSON payload and returns the JSON response.
+   *
+   * @param url URL to which the request should be sent.
+   * @param payload Data to be included in the request body as JSON.
+   */
+  public static put<TResponse>(
+    url: string,
+    payload: object
+  ): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.PUT,
+      ResponseType.Json,
+      payload,
+      PayloadType.Json
+    );
+  }
+
+  /**
+   * Sends a DELETE request returns the JSON response.
+   *
+   * @param url URL to which the request should be sent.
+   */
+  public static delete<TResponse>(url: string) {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.DELETE,
+      ResponseType.Json
+    );
+  }
+
+  /**
+   * Posts form data to a URL and retrieves the JSON response.
+   *
+   * @param url URL to which the request should be sent.
+   * @param form Form object to be encoded in the body.
+   */
+  public static postFormUrlEncoded<TResponse>(
+    url: string,
+    form: object
+  ): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.POST,
+      ResponseType.Json,
+      form,
+      PayloadType.UrlEncoded
+    );
+  }
+
+  /**
+   * Retrieves the file at the given URL and returns it as an IFileBlob.
+   *
+   * @param url URL from which to retrieve hte file.
+   */
   public static downloadFile(url: string): Promise<HttpResult<IFileBlob>> {
     return new Promise((resolve, reject) => {
       const result = new HttpResult<IFileBlob>(HTTPMethod.GET, url);
-      fetch(url, { headers: this.buildRequestHeaders(false) })
+      fetch(url, { headers: this.buildRequestHeaders() })
         .then(response => {
           if (!response.ok) {
             throw createHttpError(response.status, 'Failed to download file.');
@@ -33,34 +147,6 @@ export class HttpClient {
     });
   }
 
-  public static get<T>(url: string): Promise<HttpResult<T>> {
-    return this.sendRequest<T>(
-      url,
-      HTTPMethod.GET,
-      'Failed to retrieve JSON data'
-    );
-  }
-
-  public static patch<T>(url: string, payload: object): Promise<HttpResult<T>> {
-    return this.sendUpdateRequest<T>(url, HTTPMethod.PATCH, payload);
-  }
-
-  public static post<T>(url: string, payload: object): Promise<HttpResult<T>> {
-    return this.sendUpdateRequest<T>(url, HTTPMethod.POST, payload);
-  }
-
-  public static put<T>(url: string, payload: object): Promise<HttpResult<T>> {
-    return this.sendUpdateRequest<T>(url, HTTPMethod.PUT, payload);
-  }
-
-  public static delete<T>(url: string) {
-    return this.sendRequest<T>(
-      url,
-      HTTPMethod.DELETE,
-      'Failed to delete item.'
-    );
-  }
-
   /**
    * Safely cancels an HTTP request that was made.
    *
@@ -76,14 +162,129 @@ export class HttpClient {
   }
 
   /**
-   * Create a HTTP request header for API calls
+   * Creates the request headers collection for a request.
+   *
+   * @param payloadType The type of payload to be sent in the body of the request.
    */
-  protected static buildRequestHeaders = (forJsonSend: boolean) => {
+  protected static buildRequestHeaders = (payloadType?: PayloadType) => {
     const requestHeaders = new Headers();
-    if (forJsonSend) {
-      requestHeaders.append(HttpHeader.ContentType, 'application/json');
+
+    switch (payloadType) {
+      case PayloadType.Json:
+        requestHeaders.append(HttpHeader.ContentType, HttpContentType.Json);
+        break;
+
+      case PayloadType.UrlEncoded:
+        requestHeaders.append(
+          HttpHeader.ContentType,
+          HttpContentType.FormUrlEncoded
+        );
+        break;
+
+      default:
+        break;
     }
+
     return requestHeaders;
+  };
+
+  /**
+   * Sends an HTTP request.
+   *
+   * @param url Target URL for the request.
+   * @param method HTTP method to use.
+   * @param errorMessage Error message in case of failures.
+   * @param payload Optional payload to include in the body.
+   * @param payloadType Type of the payload to include in the body.
+   */
+  private static sendRequest<TResponse>(
+    url: string,
+    method: HTTPMethod,
+    responseType: ResponseType,
+    payload?: object | string,
+    payloadType?: PayloadType
+  ): Promise<HttpResult<TResponse>> {
+    return new Promise((resolve, reject) => {
+      const result = new HttpResult<TResponse>(method, url);
+      fetch(url, {
+        method,
+        headers: this.buildRequestHeaders(payloadType),
+        body: payload
+          ? HttpClient.encodePayload(payload, payloadType!)
+          : undefined
+      })
+        .then(HttpClient.parseResponse(method, responseType))
+        .then((data: TResponse) => {
+          result.applyData(data);
+          resolve(result);
+        })
+        .catch(reject);
+    });
+  }
+
+  /**
+   * Encodes the body of a request for the type of request.
+   *
+   * @param payload Payload to encode.
+   * @param payloadType The type of payload.
+   */
+  private static encodePayload(
+    payload: object | string,
+    payloadType: PayloadType
+  ) {
+    switch (payloadType) {
+      case PayloadType.Json:
+        return JSON.stringify(payload);
+
+      case PayloadType.UrlEncoded:
+        const dict = payload as { [key: string]: string };
+        let values: string = '';
+        for (const key of Object.keys(dict)) {
+          if (values.length > 0) {
+            values += '&';
+          }
+          values += `${key}=${encodeURIComponent(dict[key])}`;
+        }
+        return values;
+
+      default:
+        return payload as string;
+    }
+  }
+
+  /**
+   * Parses the response from an HTTP request.
+   */
+  private static parseResponse = (
+    method: HTTPMethod,
+    responseType: ResponseType
+  ): ((response: Response) => Promise<any>) => {
+    return (response: Response) => {
+      return new Promise((resolve, reject) => {
+        if (!response.ok) {
+          reject(
+            createHttpError(
+              response.status,
+              `HTTP ${method} request failed with status ${response.status}`
+            )
+          );
+          return;
+        }
+
+        try {
+          switch (responseType) {
+            case ResponseType.Text:
+              resolve(response.text());
+            case ResponseType.Json:
+              resolve(response.json());
+            default:
+              resolve(null);
+          }
+        } catch (err) {
+          reject(err);
+        }
+      });
+    };
   };
 
   /**
@@ -102,60 +303,4 @@ export class HttpClient {
 
     return result;
   }
-
-  private static sendUpdateRequest<T>(
-    url: string,
-    method: HTTPMethod,
-    payload: object
-  ) {
-    return this.sendRequest<T>(
-      url,
-      method,
-      'Failed to send JSON data.',
-      payload
-    );
-  }
-
-  private static sendRequest<T>(
-    url: string,
-    method: HTTPMethod,
-    errorMessage: string,
-    payload?: object
-  ): Promise<HttpResult<T>> {
-    return new Promise((resolve, reject) => {
-      const result = new HttpResult<T>(method, url);
-      fetch(url, {
-        method,
-        headers: this.buildRequestHeaders(true),
-        body: payload ? JSON.stringify(payload) : undefined
-      })
-        .then(HttpClient.parseResponse(errorMessage))
-        .then((data: T) => {
-          result.applyData(data);
-          resolve(result);
-        })
-        .catch(reject);
-    });
-  }
-
-  /**
-   * Common routine for parsing a API response
-   */
-  private static parseResponse = (
-    message: string
-  ): ((response: Response) => Promise<any>) => {
-    return (response: Response) => {
-      return new Promise((resolve, reject) => {
-        try {
-          if (!response.ok) {
-            reject(createHttpError(response.status, message));
-          } else {
-            resolve(response.json());
-          }
-        } catch (err) {
-          reject(err);
-        }
-      });
-    };
-  };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@westlakelabs/http-client",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Westlake Labs HTTP client wrapper.",
   "main": "build/index.js",
   "scripts": {
@@ -17,16 +17,16 @@
   },
   "homepage": "https://github.com/andrewrmiller/http-client#readme",
   "devDependencies": {
-    "@types/bluebird": "^3.5.29",
-    "@types/http-errors": "^1.6.3",
-    "ts-node": "^8.6.2",
     "tslint": "^6.0.0",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.7.5"
   },
   "dependencies": {
+    "@types/bluebird": "^3.5.29",
+    "@types/http-errors": "^1.6.3",
     "bluebird": "^3.7.2",
     "http-errors": "^1.7.3",
-    "http-method-enum": "^1.0.0"
+    "http-method-enum": "^1.0.0",
+    "ts-node": "^8.6.2"
   }
 }

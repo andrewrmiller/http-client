@@ -4,7 +4,7 @@ import { HTTPMethod } from 'http-method-enum';
 import { HttpContentType, HttpHeader } from './HttpHeader';
 import { HttpResult, IFileBlob } from './HttpResult';
 
-enum PayloadType {
+export enum PayloadType {
   None,
   Json,
   UrlEncoded
@@ -27,9 +27,18 @@ export class HttpClient {
    * Retrieves the data from a specified URL as JSON.
    *
    * @param url URL to which the request should be sent.
+   * @param headers Headers to include with the request (optional).
    */
-  public static get<TResponse>(url: string): Promise<HttpResult<TResponse>> {
-    return this.sendRequest<TResponse>(url, HTTPMethod.GET, ResponseType.Json);
+  public static get<TResponse>(
+    url: string,
+    headers?: Headers
+  ): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.GET,
+      ResponseType.Json,
+      headers
+    );
   }
 
   /**
@@ -37,15 +46,18 @@ export class HttpClient {
    *
    * @param url URL to which the request should be sent.
    * @param payload Data to be included in the request body as JSON.
+   * @param headers Headers to include with the request (optional).
    */
   public static post<TResponse>(
     url: string,
-    payload: object
+    payload: object,
+    headers?: Headers
   ): Promise<HttpResult<TResponse>> {
     return this.sendRequest<TResponse>(
       url,
       HTTPMethod.POST,
       ResponseType.Json,
+      headers,
       payload,
       PayloadType.Json
     );
@@ -56,15 +68,18 @@ export class HttpClient {
    *
    * @param url URL to which the request should be sent.
    * @param payload Data to be included in the request body as JSON.
+   * @param headers Headers to include with the request (optional).
    */
   public static patch<TResponse>(
     url: string,
-    payload: object
+    payload: object,
+    headers?: Headers
   ): Promise<HttpResult<TResponse>> {
     return this.sendRequest<TResponse>(
       url,
       HTTPMethod.PATCH,
       ResponseType.Json,
+      headers,
       payload,
       PayloadType.Json
     );
@@ -75,15 +90,18 @@ export class HttpClient {
    *
    * @param url URL to which the request should be sent.
    * @param payload Data to be included in the request body as JSON.
+   * @param headers Headers to include with the request (optional).
    */
   public static put<TResponse>(
     url: string,
-    payload: object
+    payload: object,
+    headers?: Headers
   ): Promise<HttpResult<TResponse>> {
     return this.sendRequest<TResponse>(
       url,
       HTTPMethod.PUT,
       ResponseType.Json,
+      headers,
       payload,
       PayloadType.Json
     );
@@ -93,12 +111,14 @@ export class HttpClient {
    * Sends a DELETE request returns the JSON response.
    *
    * @param url URL to which the request should be sent.
+   * @param headers Headers to include with the request (optional).
    */
-  public static delete<TResponse>(url: string) {
+  public static delete<TResponse>(url: string, headers?: Headers) {
     return this.sendRequest<TResponse>(
       url,
       HTTPMethod.DELETE,
-      ResponseType.Json
+      ResponseType.Json,
+      headers
     );
   }
 
@@ -107,15 +127,18 @@ export class HttpClient {
    *
    * @param url URL to which the request should be sent.
    * @param form Form object to be encoded in the body.
+   * @param headers Headers to include with the request (optional).
    */
   public static postFormUrlEncoded<TResponse>(
     url: string,
-    form: object
+    form: object,
+    headers?: Headers
   ): Promise<HttpResult<TResponse>> {
     return this.sendRequest<TResponse>(
       url,
       HTTPMethod.POST,
       ResponseType.Json,
+      headers,
       form,
       PayloadType.UrlEncoded
     );
@@ -124,12 +147,18 @@ export class HttpClient {
   /**
    * Retrieves the file at the given URL and returns it as an IFileBlob.
    *
-   * @param url URL from which to retrieve hte file.
+   * @param url URL from which to retrieve the file.
+   * @param headers Headers to include with the request (optional).
    */
-  public static downloadFile(url: string): Promise<HttpResult<IFileBlob>> {
+  public static downloadFile(
+    url: string,
+    headers?: Headers
+  ): Promise<HttpResult<IFileBlob>> {
     return new Promise((resolve, reject) => {
       const result = new HttpResult<IFileBlob>(HTTPMethod.GET, url);
-      fetch(url, { headers: this.buildRequestHeaders() })
+      fetch(url, {
+        headers: this.buildRequestHeaders(PayloadType.None, headers)
+      })
         .then(response => {
           if (!response.ok) {
             throw createHttpError(response.status, 'Failed to download file.');
@@ -165,9 +194,13 @@ export class HttpClient {
    * Creates the request headers collection for a request.
    *
    * @param payloadType The type of payload to be sent in the body of the request.
+   * @param headers Headers to include in the request (optional).
    */
-  protected static buildRequestHeaders = (payloadType?: PayloadType) => {
-    const requestHeaders = new Headers();
+  protected static buildRequestHeaders = (
+    payloadType: PayloadType,
+    headers?: Headers
+  ) => {
+    const requestHeaders = headers || new Headers();
 
     switch (payloadType) {
       case PayloadType.Json:
@@ -193,7 +226,8 @@ export class HttpClient {
    *
    * @param url Target URL for the request.
    * @param method HTTP method to use.
-   * @param errorMessage Error message in case of failures.
+   * @param responseType Type of reponse expected.
+   * @param headers Headers to include with the request (optional).
    * @param payload Optional payload to include in the body.
    * @param payloadType Type of the payload to include in the body.
    */
@@ -201,6 +235,7 @@ export class HttpClient {
     url: string,
     method: HTTPMethod,
     responseType: ResponseType,
+    headers?: Headers,
     payload?: object | string,
     payloadType?: PayloadType
   ): Promise<HttpResult<TResponse>> {
@@ -208,7 +243,10 @@ export class HttpClient {
       const result = new HttpResult<TResponse>(method, url);
       fetch(url, {
         method,
-        headers: this.buildRequestHeaders(payloadType),
+        headers: this.buildRequestHeaders(
+          payloadType || PayloadType.None,
+          headers
+        ),
         body: payload
           ? HttpClient.encodePayload(payload, payloadType!)
           : undefined

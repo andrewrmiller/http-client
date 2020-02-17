@@ -7,7 +7,8 @@ import { HttpResult, IFileBlob } from './HttpResult';
 export enum PayloadType {
   None,
   Json,
-  UrlEncoded
+  UrlEncoded,
+  MultipartFormData
 }
 
 enum ResponseType {
@@ -145,6 +146,28 @@ export class HttpClient {
   }
 
   /**
+   * Sends a POST request with a multipart/form-data payload and returns the JSON response.
+   *
+   * @param url URL to which the request should be sent.
+   * @param payload Data to be included in the request body as JSON.
+   * @param headers Headers to include with the request (optional).
+   */
+  public static postMultipartFormData<TResponse>(
+    url: string,
+    payload: object,
+    headers?: Headers
+  ): Promise<HttpResult<TResponse>> {
+    return this.sendRequest<TResponse>(
+      url,
+      HTTPMethod.POST,
+      ResponseType.Json,
+      headers,
+      payload,
+      PayloadType.MultipartFormData
+    );
+  }
+
+  /**
    * Retrieves the file at the given URL and returns it as an IFileBlob.
    *
    * @param url URL from which to retrieve the file.
@@ -211,6 +234,13 @@ export class HttpClient {
         requestHeaders.append(
           HttpHeader.ContentType,
           HttpContentType.FormUrlEncoded
+        );
+        break;
+
+      case PayloadType.MultipartFormData:
+        requestHeaders.append(
+          HttpHeader.ContentType,
+          HttpContentType.MultipartFormData
         );
         break;
 

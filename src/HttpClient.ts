@@ -238,10 +238,7 @@ export class HttpClient {
         break;
 
       case PayloadType.MultipartFormData:
-        requestHeaders.append(
-          HttpHeader.ContentType,
-          HttpContentType.MultipartFormData
-        );
+        // Fetch knows how generate the full multipart/form-data content type.
         break;
 
       default:

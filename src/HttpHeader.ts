@@ -7,6 +7,5 @@ export enum HttpHeader {
 
 export enum HttpContentType {
   Json = 'application/json',
-  FormUrlEncoded = 'application/x-www-form-urlencoded',
-  MultipartFormData = 'multipart/form-data'
+  FormUrlEncoded = 'application/x-www-form-urlencoded'
 }

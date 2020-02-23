@@ -43,6 +43,25 @@ export class HttpClient {
   }
 
   /**
+   * Retrieves the raw response from an HTTP request.
+   *
+   * @param url URL to which the request should be sent.
+   * @param headers Headers to include with the request (optional).
+   */
+  public static getResponse(url: string, headers?: Headers): Promise<Response> {
+    return new Promise((resolve, reject) => {
+      fetch(url, {
+        method: HTTPMethod.GET,
+        headers
+      })
+        .then(response => {
+          resolve(response);
+        })
+        .catch(err => reject(err));
+    });
+  }
+
+  /**
    * Sends a POST request with a JSON payload and returns the JSON response.
    *
    * @param url URL to which the request should be sent.
